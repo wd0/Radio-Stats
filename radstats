@@ -1,0 +1,53 @@
+#!/usr/local/bin/rc
+
+url = $1
+fetch_wait = $2
+debug = ()
+
+fn report {
+    echo $* >[1=2]
+}
+if (~ $debug ()) {
+    fn report {}
+}
+
+if (~ $url ()) {
+   url = 'http://r-a-d.io'
+   report using url $url
+}
+if (~ $fetch_wait ()) {
+   fetch_wait = 15
+   report will wait $fetch_wait sec between fetches
+}
+
+fn main {
+    url = $1 fetch_wait = $2
+    while () {
+        report getting page
+        page = `{curl -ss $url | tr '\n' ' '}
+
+        report grabbing '#'listeners
+        nlisteners = `{echo $page | sed -E 's|.*Listeners: [^>]*>([0-9][0-9]*).*|\1|'}
+
+        report grabbing song title
+        song_title = `{echo $page | sed -E 's|.*<h2>([^<]*)</h2>.*|\1|'}
+
+        showstats $nlisteners $song_title
+        sleep $fetch_wait
+    }
+}
+
+fn showstats {
+   nlisteners = $1
+   shift; song_title = $*
+   if (~ $song_title ()) song_title = '?unknown'
+   if (~ $nlisteners ()) nlisteners = '?unknown'
+
+   date '+%Y-%m-%dT%H:%M:%S' | tr '\n' ' '
+   printf '\t'
+   echo -n $nlisteners
+   printf '\t'
+   echo $song_title
+}
+
+main $url $fetch_wait

@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+# Optionally provide a URL and the wait between page fetches.
+
+use POSIX;
+use warnings;
+
+$url = @ARGV? shift @ARGV : "http://r-a-d.io";
+$fetch_wait= @ARGV? shift @ARGV : 16;
+
+while (1) {
+    $_ = `curl -ss $url`;
+    s/\n//g;
+    if (/.*h2>(.*?)<\/h2>.*Listen.*?>(\d+)</) { # (Title) (# Listeners)
+        print "$2\t",
+               POSIX::strftime("%Y-%m-%dT%H:%M:%S\t", localtime),
+               "$1\n";
+    }
+    sleep $fetch_wait;
+}
